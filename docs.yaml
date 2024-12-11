@@ -1,0 +1,299 @@
+openapi: 3.0.1
+info:
+  title: Course Enrollment API
+  description: This API handles student registrations, login, course enrollments, and course details.
+  version: 1.0.0
+servers:
+  - url: https://serene-sea-45310-341eef3ac20e.herokuapp.com
+paths:
+  /students/register:
+    post:
+      summary: Register a new student
+      operationId: registerStudent
+      requestBody:
+        description: Student registration details
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                first_name:
+                  type: string
+                last_name:
+                  type: string
+                email:
+                  type: string
+                password:
+                  type: string
+                address:
+                  type: string
+                date_of_birth:
+                  type: string
+                  format: date-time 
+      responses:
+        '200':
+          description: Successful registration
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                  data:
+                    type: object
+                    properties:
+                      id:
+                        type: integer
+                      first_name:
+                        type: string
+                      last_name:
+                        type: string
+                      address:
+                        type: string
+                      email:
+                        type: string
+                      date_of_birth:
+                        type: string
+                        format: date-time
+        '400':
+          description: Invalid Request
+        '405':
+          description: Email already registered
+        '500':
+          description: Database Error
+
+  /students/login:
+    post:
+      summary: Login a student
+      operationId: loginStudent
+      requestBody:
+        description: Student login credentials
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                email:
+                  type: string
+                password:
+                  type: string
+      responses:
+        '200':
+          description: Successful login
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                  token:
+                    type: string
+        '400':
+          description: Invalid Email or Password
+        '500':
+          description: Error generating token
+
+  /students/me:
+    get:
+      summary: Get logged-in student details
+      operationId: getStudentDetails
+      security:
+        - jwt: []
+      responses:
+        '200':
+          description: Student details
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  student_id:
+                    type: integer
+                  first_name:
+                    type: string
+                  last_name:
+                    type: string
+                  address:
+                    type: string
+                  email:
+                    type: string
+                  date_of_birth:
+                    type: string
+                    format: date-time
+                  courses:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        course_name:
+                          type: string
+                        enrollment_date:
+                          type: string
+                          format: date-time
+        '401':
+          description: Unauthorized
+        '500':
+          description: Error fetching student data
+
+  /courses:
+    get:
+      summary: Get list of available courses
+      operationId: getAvailableCourses
+      security:
+        - jwt: []
+      responses:
+        '200':
+          description: List of courses
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  courses:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        course_id:
+                          type: integer
+                        name:
+                          type: string
+                        description:
+                          type: string
+                        credits:
+                          type: integer
+                        department:
+                          type: object
+                          properties:
+                            department_id:
+                              type: integer
+                            name:
+                              type: string
+                            description:
+                              type: string
+        '500':
+          description: Error fetching courses data
+
+  /enrollments:
+    post:
+      summary: Enroll a student in a course
+      operationId: enrollCourse
+      security:
+        - jwt: []
+      requestBody:
+        description: Course enrollment details
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                course_id:
+                  type: integer
+      responses:
+        '200':
+          description: Successful enrollment
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  course_name:
+                    type: string
+                  enrollment_date:
+                    type: string
+                    format: date-time
+        '400':
+          description: Enrollment already exists
+        '405':
+          description: Course does not exist
+        '500':
+          description: Error creating enrollment
+
+  /enrollments/{id}:
+    delete:
+      summary: Delete a student's enrollment in a course
+      operationId: deleteEnrollment
+      security:
+        - jwt: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: Enrollment ID to delete
+      responses:
+        '200':
+          description: Successful enrollment deletion
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  course_name:
+                    type: string
+                  enrollment_date:
+                    type: string
+                    format: date-time
+        '400':
+          description: Enrollment does not exist
+        '500':
+          description: Error deleting enrollment
+
+components:
+  securitySchemes:
+    jwt:
+      type: apiKey
+      in: header
+      name: Authorization
+  schemas:
+    Student:
+      type: object
+      properties:
+        student_id:
+          type: integer
+        first_name:
+          type: string
+        last_name:
+          type: string
+        email:
+          type: string
+        password:
+          type: string
+        address:
+          type: string
+        date_of_birth:
+          type: string
+          format: date-time
+    Course:
+      type: object
+      properties:
+        course_id:
+          type: integer
+        name:
+          type: string
+        description:
+          type: string
+        department_id:
+          type: integer
+        credits:
+          type: integer
+    Enrollment:
+      type: object
+      properties:
+        enrollment_id:
+          type: integer
+        student_id:
+          type: integer
+        course_id:
+          type: integer
+        enrollment_date:
+          type: string
+          format: date-time
+    EnrollCourseRequest:
+      type: object
+      properties:
+        course_id:
+          type: integer
